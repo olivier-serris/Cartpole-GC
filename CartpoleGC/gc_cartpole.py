@@ -46,7 +46,9 @@ class GC_ContinuousCartpoleVector(VectorEnv):
         n_eval = 6
         self.eval_options = {
             "reset_pos": np.array([0]).repeat(n_eval),
-            "goal_pos": np.linspace(-x_threshold + 0.20, x_threshold - 0.20, n_eval),
+            "goal_pos": np.linspace(
+                -x_threshold + x_threshold / 10, x_threshold - x_threshold / 10, n_eval
+            ),
         }
         self.goal_reached_threshold = goal_reached_threshold
         self.x_invariance = x_invariance
@@ -67,7 +69,7 @@ class GC_ContinuousCartpoleVector(VectorEnv):
     def reset(
         self, *, seed: int | None = None, options: dict[str, Any] | None = None
     ) -> tuple[Any, dict[str, Any]]:
-
+        super().reset(seed=seed)
         obs, info = self.cartpole.reset(seed=seed, options=options)
         if options and "goal_pos" in options:
             self.desired_goal = np.repeat(
@@ -80,13 +82,6 @@ class GC_ContinuousCartpoleVector(VectorEnv):
 
     def goal_reached(self, observation, goal_reached_threshold):
 
-        # if self.x_invariance:
-        #     return np.abs(observation["desired_goal"]) < goal_reached_threshold
-        # else:
-        #     return (
-        #         np.abs(observation["achieved_goal"] - observation["desired_goal"])
-        #         < goal_reached_threshold
-        #     )
         return (
             np.abs(observation["achieved_goal"] - observation["desired_goal"])
             < goal_reached_threshold
@@ -104,8 +99,14 @@ class GC_ContinuousCartpoleVector(VectorEnv):
                 + self.np_random.uniform(
                     -self.x_threshold, self.x_threshold, self.num_envs
                 )
-                * 1.5
+                # * 1.5
             )
+            # mask = self.np_random.uniform(size=self.num_envs) < 0.5
+            # x_repeat = np.repeat(
+            #     np.array(self.x_threshold).reshape(1, -1), self.num_envs
+            # )
+            # position = self.cartpole.state.T[:, 0] + np.where(mask, x_repeat, -x_repeat)
+
         return position.reshape(-1, 1)
 
     def to_gc_obs(self, observation, desired_goal):
